@@ -1,29 +1,28 @@
 package ben.flash.greatreflector
 {
-	import ben.flash.greatreflector.command.ICommand;
 	import ben.flash.greatreflector.command.CommandFactory;
-	import ben.flash.greatreflector.command.SelectCommand;
-	import flash.display.Bitmap;
-	import flash.display.Loader;
-	import flash.display.LoaderInfo;
+	import ben.flash.greatreflector.command.ICommand;
+	import ben.flash.greatreflector.effect.Filters;
+	import ben.flash.greatreflector.ui.InfoPanel;
+	import flash.display.DisplayObject;
+	import flash.display.DisplayObjectContainer;
+	import flash.display.InteractiveObject;
 	import flash.display.SimpleButton;
 	import flash.display.Sprite;
 	import flash.events.Event;
 	import flash.events.KeyboardEvent;
 	import flash.events.MouseEvent;
-	import flash.net.URLRequest;
-	import flash.text.TextField;
 	
 	/**
 	 * ...
 	 * @author Ben
 	 */
-	public class GreatReflector extends Sprite 
+	public class GreatReflector extends Sprite
 	{
 		// select button
 		private var _selectBtn:SimpleButton;
-		// information text of current command handler
-		private var _infoText:TextField;
+		// information panel
+		private var _infoPanel:InfoPanel;
 		// current command handler
 		private var _cmd:ICommand;
 		// current command handler type
@@ -34,6 +33,9 @@ package ben.flash.greatreflector
 		private var _prevMouseY:int;
 		// check if it's dragging now
 		private var _dragging:Boolean;
+		
+		[Embed(source="img/selectBtn.png")]    
+        private var select:Class; 
 		
 		public function GreatReflector() 
 		{
@@ -50,18 +52,19 @@ package ben.flash.greatreflector
 			_cmdType = CommandFactory.TYPE_DEFAULT;
 			_cmd = CommandFactory.getCommand(_cmdType);
 			
-			// load image for select button
-			var request:URLRequest = new URLRequest("img/youtube.png");
-			var loader:Loader = new Loader();
-			loader.contentLoaderInfo.addEventListener(Event.COMPLETE, loadCompleteHandler);
-			loader.load(request);
+			// attain the image
+			var img:* = new select();
+			// create and add the select button
+			_selectBtn = new SimpleButton(img, img, img, img);
+			_selectBtn.addEventListener(MouseEvent.MOUSE_DOWN, selectBtnDownHandler);
+			_selectBtn.addEventListener(MouseEvent.CLICK, selectBtnClickHandler);
+			this.addChild(_selectBtn);
 			
-			// create and add information text
-			_infoText = new TextField();
-			_infoText.x = 40;
-			_infoText.y = 5;
-			_infoText.mouseEnabled = false;
-			this.addChild(_infoText);
+			// create and add information panel
+			_infoPanel = new InfoPanel();
+			_infoPanel.x = 40;
+			_infoPanel.y = 0;
+			this.addChild(_infoPanel);
 			
 			stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseDownHandler);
 			stage.addEventListener(KeyboardEvent.KEY_DOWN, keyDownHandler);
@@ -69,20 +72,12 @@ package ben.flash.greatreflector
 		}
 		
 		/**
-		 * handler of load complete event
+		 * use to block the behavior of mouseDownHandler
 		 * @param	event
 		 */
-		private function loadCompleteHandler(event:Event):void
+		private function selectBtnDownHandler(event:MouseEvent):void
 		{
-			var loaderInfo:LoaderInfo = event.currentTarget as LoaderInfo;
-			var loader:Loader = loaderInfo.loader;
-			// attain the image
-			var img:Bitmap = loader.content as Bitmap;
-			// create and add the select button
-			_selectBtn = new SimpleButton(img, img, img, img);
-			_selectBtn.addEventListener(MouseEvent.CLICK, selectBtnClickHandler);
-			this.addChild(_selectBtn);
-			loader.unload();
+			event.stopPropagation();
 		}
 		
 		/**
@@ -95,11 +90,16 @@ package ben.flash.greatreflector
 			if (_cmdType == CommandFactory.TYPE_SELECT)
 			{
 				_cmdType = CommandFactory.TYPE_DEFAULT;
+				_selectBtn.filters = null;
 			}
 			else
 			{
 				_cmdType = CommandFactory.TYPE_SELECT;
+				_selectBtn.filters = [Filters.lightFilter1];
 			}
+			
+			// whether block original mouse event listener
+			setStageMouseEnabled(_cmdType == CommandFactory.TYPE_DEFAULT);
 			// clear previous command handler
 			_cmd.dispose();
 			// update command handler
@@ -169,14 +169,33 @@ package ben.flash.greatreflector
 		 */
 		private function enterFrameHandler(event:Event):void
 		{
-			var info:String = _cmd.info();
-			if (info != null)
+			_infoPanel.setInfo(_cmd.info());
+		}
+		
+		/**
+		 * set mouseEnabled and mouseChildren value of 
+		 * the display objects in the stage except GreatReflector,
+		 * use this to avoid triggering mouse event listener
+		 * of these display objects
+		 * @param	enabled
+		 */
+		private function setStageMouseEnabled(enabled:Boolean):void
+		{
+			for (var i:int = 0; i < stage.numChildren; i++)
 			{
-				_infoText.text = info;
-			}
-			else
-			{
-				_infoText.text = "";
+				var child:DisplayObject = stage.getChildAt(i);
+				if (child == this)
+				{
+					continue;
+				}
+				if (child is InteractiveObject)
+				{
+					(child as InteractiveObject).mouseEnabled = enabled;
+				}
+				if (child is DisplayObjectContainer)
+				{
+					(child as DisplayObjectContainer).mouseChildren = enabled;
+				}
 			}
 		}
 	}

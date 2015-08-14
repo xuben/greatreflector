@@ -1,14 +1,14 @@
 package ben.flash.greatreflector.command 
 {
 	import ben.flash.greatreflector.effect.Filters;
+	import flash.display.DisplayObject;
 	import flash.display.DisplayObjectContainer;
+	import flash.display.Stage;
 	import flash.events.KeyboardEvent;
+	import flash.events.MouseEvent;
 	import flash.geom.Point;
 	import flash.ui.Keyboard;
-	
-	import flash.display.DisplayObject;
-	import flash.display.Stage;
-	import flash.events.MouseEvent;
+	import flash.utils.getQualifiedClassName;
 	
 	/**
 	 * ...
@@ -28,9 +28,14 @@ package ben.flash.greatreflector.command
 		
 		override public function onMouseDown(event:MouseEvent):void
 		{
+			// you can only change selection if nothing 
+			// previously selected or click with ctrl key preesed
+			if (_obj != null && !event.ctrlKey)
+			{
+				return;
+			}
 			// get new selection
 			var obj:DisplayObject = find(event);
-			
 			select(obj);
 		}
 		
@@ -205,9 +210,26 @@ package ben.flash.greatreflector.command
 		{
 			if (_obj)
 			{
-				return "x: " + _obj.x + ", y: " + _obj.y;
+				return getShortClassName(_obj) + " " + _obj.name 
+				+ "\nx: " + _obj.x + ", y: " + _obj.y;
 			}
 			return "";
+		}
+		
+		/**
+		 * get the class name without package
+		 * @param	value
+		 * @return
+		 */
+		public function getShortClassName(value:*):String
+		{
+			var className:String = getQualifiedClassName(value);
+			var colonIndex:int = className.lastIndexOf(":");
+			if (colonIndex > 0)
+			{
+				className = className.substring(colonIndex + 1);
+			}
+			return className;
 		}
 	}
 

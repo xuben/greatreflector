@@ -4,7 +4,7 @@
   <output>
     <movie outputType="Application" />
     <movie input="" />
-    <movie path="bin\GreatReflector.swf" />
+    <movie path="bin\GreatReflector.swc" />
     <movie fps="30" />
     <movie width="800" />
     <movie height="600" />
@@ -81,7 +81,7 @@
   <!-- Executed before build -->
   <preBuildCommand />
   <!-- Executed after build -->
-  <postBuildCommand alwaysRun="False" />
+  <postBuildCommand alwaysRun="False">"$(CompilerPath)\bin\compc.exe" -source-path "$(ProjectDir)\src" -include-classes "ben.flash.greatreflector.GreatReflector" -output "$(OutputFile)"</postBuildCommand>
   <!-- Other project options -->
   <options>
     <option showHiddenPaths="False" />
